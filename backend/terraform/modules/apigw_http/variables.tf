@@ -33,7 +33,7 @@ variable "cors_allowed_origins" {
 variable "cors_allowed_methods" {
   description = "CORS allowed methods."
   type        = list(string)
-  default     = ["GET", "POST", "OPTIONS"]
+  default     = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 }
 
 variable "cors_allowed_headers" {

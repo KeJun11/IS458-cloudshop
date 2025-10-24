@@ -1,10 +1,14 @@
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
 locals {
   project              = var.project_name
   environment          = var.env
   common_tags          = merge({ Project = var.project_name, Environment = var.env, ManagedBy = "terraform" }, var.additional_tags)
   lambda_source_root   = abspath("${path.root}/../../../lambdas")
-  static_bucket_name   = "${var.project_name}-${var.env}-frontend-is458-2025"
-  invoice_bucket_name  = "${var.project_name}-${var.env}-invoices"
+  static_bucket_name   = "${var.project_name}-${var.env}-frontend-is458-2025-${random_id.bucket_suffix.hex}"
+  invoice_bucket_name  = "${var.project_name}-${var.env}-invoices-${random_id.bucket_suffix.hex}"
   ses_identity_defined = var.ses_sender_email != ""
 }
 
@@ -146,7 +150,6 @@ locals {
   ses_sender_email = var.ses_sender_email
   dynamodb_arns    = module.dynamodb.table_arns
   dynamodb_names   = module.dynamodb.table_names
-  product_type_gsi = module.dynamodb.product_type_gsi_name
 }
 
 module "lambda_get_products" {
@@ -184,7 +187,8 @@ module "lambda_manage_cart" {
   source_dir    = "${local.lambda_source_root}/manage_cart"
 
   environment_variables = {
-    CARTS_TABLE = local.dynamodb_names["carts"]
+    CARTS_TABLE    = local.dynamodb_names["carts"]
+    PRODUCTS_TABLE = local.dynamodb_names["products"]
   }
 
   policy_statements = [
@@ -192,6 +196,11 @@ module "lambda_manage_cart" {
       sid       = "ManageCartsTable"
       actions   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"]
       resources = [local.dynamodb_arns["carts"]]
+    },
+    {
+      sid       = "ReadProductsTable"
+      actions   = ["dynamodb:GetItem"]
+      resources = [local.dynamodb_arns["products"]]
     }
   ]
 }
@@ -216,9 +225,12 @@ module "lambda_create_order" {
 
   policy_statements = [
     {
-      sid       = "ManageOrdersTable"
-      actions   = ["dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:GetItem"]
-      resources = [local.dynamodb_arns["orders"]]
+      sid     = "ManageOrdersTable"
+      actions = ["dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:GetItem", "dynamodb:Query"]
+      resources = [
+        local.dynamodb_arns["orders"],
+        "${local.dynamodb_arns["orders"]}/index/*"
+      ]
     },
     {
       sid       = "ReadCarts"
@@ -249,6 +261,7 @@ module "lambda_process_order" {
 
   environment_variables = {
     ORDERS_TABLE     = local.dynamodb_names["orders"]
+    CARTS_TABLE      = local.dynamodb_names["carts"]
     ORDER_QUEUE_ARN  = module.order_queue.queue_arn
     INVOICE_BUCKET   = aws_s3_bucket.invoice.bucket
     SES_SENDER_EMAIL = local.ses_sender_email
@@ -259,6 +272,11 @@ module "lambda_process_order" {
       sid       = "UpdateOrders"
       actions   = ["dynamodb:GetItem", "dynamodb:UpdateItem"]
       resources = [local.dynamodb_arns["orders"]]
+    },
+    {
+      sid       = "ManageCarts"
+      actions   = ["dynamodb:UpdateItem"]
+      resources = [local.dynamodb_arns["carts"]]
     },
     {
       sid       = "ManageQueue"
@@ -272,7 +290,7 @@ module "lambda_process_order" {
     },
     {
       sid       = "SendEmails"
-      actions   = ["ses:SendEmail", "ses:SendRawEmail"]
+      actions   = ["ses:SendEmail", "ses:SendRawEmail", "ses:GetIdentityVerificationAttributes"]
       resources = local.ses_identity_arn != null ? [local.ses_identity_arn] : ["*"]
     }
   ]
@@ -312,7 +330,7 @@ module "lambda_get_recommendations" {
   environment_variables = {
     INTERACTIONS_TABLE = local.dynamodb_names["interactions"]
     PRODUCTS_TABLE     = local.dynamodb_names["products"]
-    PRODUCT_TYPE_GSI   = local.product_type_gsi
+    PRODUCT_TYPE_GSI   = "category-index"
   }
 
   policy_statements = [
@@ -349,11 +367,35 @@ module "http_api" {
       lambda_arn = module.lambda_get_products.function_arn
     },
     {
+      route_key  = "GET /products/{id}"
+      lambda_arn = module.lambda_get_products.function_arn
+    },
+    {
+      route_key  = "GET /cart"
+      lambda_arn = module.lambda_manage_cart.function_arn
+    },
+    {
       route_key  = "POST /cart"
       lambda_arn = module.lambda_manage_cart.function_arn
     },
     {
+      route_key  = "PUT /cart"
+      lambda_arn = module.lambda_manage_cart.function_arn
+    },
+    {
+      route_key  = "DELETE /cart"
+      lambda_arn = module.lambda_manage_cart.function_arn
+    },
+    {
+      route_key  = "GET /orders"
+      lambda_arn = module.lambda_create_order.function_arn
+    },
+    {
       route_key  = "POST /orders"
+      lambda_arn = module.lambda_create_order.function_arn
+    },
+    {
+      route_key  = "GET /orders/{id}"
       lambda_arn = module.lambda_create_order.function_arn
     },
     {

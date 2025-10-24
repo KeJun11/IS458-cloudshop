@@ -8,10 +8,10 @@ output "table_arns" {
   value       = { for k, tbl in aws_dynamodb_table.this : k => tbl.arn }
 }
 
-output "product_type_gsi_name" {
-  description = "Name of the product type secondary index."
+output "category_gsi_name" {
+  description = "Name of the category secondary index."
   value       = [
     for gsi in aws_dynamodb_table.this["products"].global_secondary_index : gsi.name
-    if gsi.hash_key == "productType"
+    if gsi.hash_key == "category"
   ][0]
 }

@@ -65,8 +65,8 @@ resource "aws_lambda_permission" "apigw" {
   for_each = local.routes
 
   # AWS Lambda statement_id must contain only letters, numbers, underscores, or dashes.
-  # Route keys like "GET /products" include spaces and slashes, so sanitize them.
-  statement_id  = "AllowExecutionFromAPIGateway-${replace(replace(each.key, " ", "_"), "/", "_")}"
+  # Route keys like "GET /products/{id}" include spaces, slashes, and braces, so sanitize them.
+  statement_id  = "AllowExecutionFromAPIGateway-${replace(replace(replace(replace(each.key, " ", "_"), "/", "_"), "{", "_"), "}", "_")}"
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda_arn
   principal     = "apigateway.amazonaws.com"

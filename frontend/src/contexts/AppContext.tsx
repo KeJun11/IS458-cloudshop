@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react'
-import { type Product, type Cart, type CartItem, apiService, mockProducts } from '../services/api'
+import React, { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react'
+import { type Product, type Cart, type CartItem, mockProducts } from '../services/api'
 
 // Types
 interface User {
@@ -233,7 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'CLEAR_CART' })
     },
 
-    trackProductView: async (product: Product) => {
+    trackProductView: async (_product: Product) => {
       try {
         if (state.user) {
           // In production, uncomment this:

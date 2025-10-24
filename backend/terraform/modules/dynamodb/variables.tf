@@ -39,23 +39,32 @@ variable "tags" {
 variable "seed_products" {
   description = "List of seed products to insert into the Products table."
   type = list(object({
-    product_id   = string
-    name         = string
-    price        = number
-    product_type = string
+    product_id  = string
+    name        = string
+    description = string
+    price       = number
+    category    = string
+    image_url   = string
+    stock       = number
   }))
   default = [
     {
-      product_id   = "prod-100"
-      name         = "Wireless Headphones"
-      price        = 59.99
-      product_type = "Electronics"
+      product_id  = "prod-100"
+      name        = "Wireless Headphones"
+      description = "High-quality wireless headphones with noise cancellation"
+      price       = 59.99
+      category    = "Electronics"
+      image_url   = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500"
+      stock       = 50
     },
     {
-      product_id   = "prod-200"
-      name         = "Paperback Notebook"
-      price        = 12.5
-      product_type = "Stationery"
+      product_id  = "prod-200"
+      name        = "Paperback Notebook"
+      description = "Premium quality notebook for writing and sketching"
+      price       = 12.5
+      category    = "Stationery"
+      image_url   = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500"
+      stock       = 100
     }
   ]
 }

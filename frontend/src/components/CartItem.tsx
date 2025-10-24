@@ -2,7 +2,6 @@ import {
   Box,
   Image,
   Text,
-  Button,
   HStack,
   VStack,
   IconButton,

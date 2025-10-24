@@ -9,14 +9,14 @@ locals {
           type = "S"
         },
         {
-          name = "productType"
+          name = "category"
           type = "S"
         },
       ]
       global_secondary_indexes = [
         {
-          name            = "productType-index"
-          hash_key        = "productType"
+          name            = "category-index"
+          hash_key        = "category"
           projection_type = "ALL"
         }
       ]
@@ -67,14 +67,14 @@ locals {
           type = "S"
         },
         {
-          name = "productType"
+          name = "category"
           type = "S"
         }
       ]
       global_secondary_indexes = [
         {
-          name            = "productType-index"
-          hash_key        = "productType"
+          name            = "category-index"
+          hash_key        = "category"
           projection_type = "ALL"
         }
       ]
@@ -130,8 +130,11 @@ resource "aws_dynamodb_table_item" "seed_products" {
   item = jsonencode({
     productId   = { S = each.value.product_id }
     name        = { S = each.value.name }
+    description = { S = each.value.description }
     price       = { N = tostring(each.value.price) }
-    productType = { S = each.value.product_type }
+    category    = { S = each.value.category }
+    imageUrl    = { S = each.value.image_url }
+    stock       = { N = tostring(each.value.stock) }
   })
 
   lifecycle {
