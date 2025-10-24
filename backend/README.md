@@ -23,12 +23,14 @@ Terraform configuration for a serverless e-commerce proof of concept covering pr
    Copy-Item .env.example .env
    ```
 2. Edit `.env` and set at least:
+
    - `TF_VAR_project_name`
    - `TF_VAR_env`
    - `TF_VAR_region`
    - `TF_VAR_ses_sender_email` (leave blank to skip SES identity creation; required for outbound email).
 
 3. Export the variables into your shell before running Terraform.
+
    - **PowerShell**
      ```powershell
      Get-Content .env | Where-Object { $_ -and $_ -notmatch '^#' } | ForEach-Object {
