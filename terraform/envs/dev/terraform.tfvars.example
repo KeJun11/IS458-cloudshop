@@ -1,0 +1,13 @@
+project_name = "aws-ecommerce"
+env          = "dev"
+region       = "us-east-1"
+# Provide a verified SES sender email before enabling outbound emails. Leave blank to skip SES configuration.
+ses_sender_email = ""
+
+# Optional overrides
+# frontend_index_key            = "index.html"
+# invoice_bucket_lifecycle_days = 30
+# additional_tags = {
+#   Owner       = "team"
+#   CostCentre  = "1234"
+# }
