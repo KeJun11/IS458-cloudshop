@@ -71,6 +71,7 @@ class ApiService {
     }
 
     try {
+      // Fetching the product, edit this to change the point
       const response = await fetch(url, config)
       
       if (!response.ok) {
