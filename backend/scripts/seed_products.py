@@ -60,7 +60,7 @@ MOCK_PRODUCTS = [
         "description": "Multi-port USB-C hub with HDMI and charging support",
         "price": Decimal("89.99"),
         "category": "Electronics",
-        "imageUrl": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500",
+        "imageUrl": "https://i0.wp.com/boingboing.net/wp-content/uploads/2021/01/70usb.png?w=500",
         "stock": 40,
     },
     {
@@ -69,7 +69,7 @@ MOCK_PRODUCTS = [
         "description": "20000mAh portable battery pack with fast charging",
         "price": Decimal("39.99"),
         "category": "Electronics",
-        "imageUrl": "https://images.unsplash.com/photo-1609592806955-d5b6c3b2e3c5?w=500",
+        "imageUrl": "https://images.unsplash.com/photo-1706275399494-44ec9ec29c7f?w=500",
         "stock": 60,
     },
 
@@ -80,7 +80,7 @@ MOCK_PRODUCTS = [
         "description": "Ultrasonic essential oil diffuser with 7-color LED lights",
         "price": Decimal("45.00"),
         "category": "Home & Kitchen",
-        "imageUrl": "https://images.unsplash.com/photo-1606813909022-5e3c8f1a2bdf?w=500",
+        "imageUrl": "https://img.freepik.com/premium-photo/glass-bong-cannabis-smoke-red-neon-background-space-text-smoking-device_1028938-426091.jpg?w=500",
         "stock": 80,
     },
     {
@@ -89,7 +89,7 @@ MOCK_PRODUCTS = [
         "description": "Durable non-stick frying pan with ergonomic handle",
         "price": Decimal("32.99"),
         "category": "Home & Kitchen",
-        "imageUrl": "https://images.unsplash.com/photo-1606755962773-0ff9a4c62007?w=500",
+        "imageUrl": "https://m.media-amazon.com/images/I/71O744n26vL._AC_UF894,1000_QL80_.jpg?w=500",
         "stock": 100,
     },
     {
@@ -98,7 +98,7 @@ MOCK_PRODUCTS = [
         "description": "1.7L stainless steel electric kettle with auto shut-off",
         "price": Decimal("59.99"),
         "category": "Home & Kitchen",
-        "imageUrl": "https://images.unsplash.com/photo-1586201375754-2637e6a3e89b?w=500",
+        "imageUrl": "https://external-preview.redd.it/13nyjFNs9QYFkJpZTc7OEYwFK21JIaen3uf9IAB-PzQ.jpg?w=500",
         "stock": 50,
     },
 
@@ -109,7 +109,7 @@ MOCK_PRODUCTS = [
         "description": "Timeless unisex denim jacket with a modern cut",
         "price": Decimal("89.99"),
         "category": "Fashion",
-        "imageUrl": "https://images.unsplash.com/photo-1514996937319-344454492b37?w=500",
+        "imageUrl": "https://d12lhx8qhim5rg.cloudfront.net/uploads/2021/07/chuck-norris.jpg?w=500",
         "stock": 60,
     },
     {
@@ -118,7 +118,7 @@ MOCK_PRODUCTS = [
         "description": "Minimalist white sneakers made from vegan leather",
         "price": Decimal("109.99"),
         "category": "Fashion",
-        "imageUrl": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500",
+        "imageUrl": "https://i.pinimg.com/736x/25/91/04/259104aab4834af04f5013321a302bf4.jpg?w=500",
         "stock": 45,
     },
     {
@@ -127,7 +127,7 @@ MOCK_PRODUCTS = [
         "description": "Soft cotton hoodie for casual everyday wear",
         "price": Decimal("69.99"),
         "category": "Fashion",
-        "imageUrl": "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500",
+        "imageUrl": "https://ih1.redbubble.net/image.3692192141.6708/ssrco,mhoodie,mens,101010:01c5ca27c6,front,tall_three_quarter,x1000-bg,f8f8f8.1.jpg?w=500",
         "stock": 75,
     },
 
@@ -138,7 +138,7 @@ MOCK_PRODUCTS = [
         "description": "Eco-friendly non-slip yoga mat for all levels",
         "price": Decimal("39.99"),
         "category": "Sports & Outdoors",
-        "imageUrl": "https://images.unsplash.com/photo-1599058917212-d750089bc07c?w=500",
+        "imageUrl": "https://t4.ftcdn.net/jpg/05/19/42/69/360_F_519426942_IJi4Q8kZiWl3298qeFk55rK3XNXhERa3.jpg?w=500",
         "stock": 120,
     },
     {
@@ -147,7 +147,7 @@ MOCK_PRODUCTS = [
         "description": "Water-resistant hiking backpack with 40L capacity",
         "price": Decimal("99.99"),
         "category": "Sports & Outdoors",
-        "imageUrl": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=500",
+        "imageUrl": "https://i.pinimg.com/736x/14/a2/77/14a277eba59862dd9deb899e9317c008.jpg?w=500",
         "stock": 35,
     },
     {
@@ -156,7 +156,7 @@ MOCK_PRODUCTS = [
         "description": "Insulated water bottle that keeps drinks cold for 24h",
         "price": Decimal("29.99"),
         "category": "Sports & Outdoors",
-        "imageUrl": "https://images.unsplash.com/photo-1586864387967-d02ef85d93e0?w=500",
+        "imageUrl": "https://m.media-amazon.com/images/I/61npyxnrKwL.jpg?w=500",
         "stock": 200,
     },
 
@@ -167,7 +167,7 @@ MOCK_PRODUCTS = [
         "description": "Gentle foaming cleanser for all skin types",
         "price": Decimal("25.99"),
         "category": "Beauty & Personal Care",
-        "imageUrl": "https://images.unsplash.com/photo-1583241800054-4e94d3d2d30d?w=500",
+        "imageUrl": "https://m.media-amazon.com/images/I/71bzIktCpVL.jpg?w=500",
         "stock": 90,
     },
     {
@@ -176,7 +176,7 @@ MOCK_PRODUCTS = [
         "description": "Hydrating lotion with aloe vera and vitamin E",
         "price": Decimal("19.99"),
         "category": "Beauty & Personal Care",
-        "imageUrl": "https://images.unsplash.com/photo-1612817159949-195b2c98f84e?w=500",
+        "imageUrl": "https://cdn-pharmacy.nhg.com.sg/aspa01as01prod/0018906_cetaphil-moisturising-lotion-237ml_510.jpeg?w=500",
         "stock": 110,
     },
     {
@@ -185,8 +185,17 @@ MOCK_PRODUCTS = [
         "description": "Compact ionic hair dryer with 3 heat settings",
         "price": Decimal("79.99"),
         "category": "Beauty & Personal Care",
-        "imageUrl": "https://images.unsplash.com/photo-1603297631963-6fc46f4ee5c3?w=500",
+        "imageUrl": "https://thumbs.dreamstime.com/b/bald-guy-holding-hair-dryer-his-hand-32348612.jpg?w=500",
         "stock": 70,
+    },
+    {
+        "productId": "prod-19",
+        "name": "Wireless Ear Buds",
+        "description": "Listening to audio wirelessly",
+        "price": Decimal("49.99"),
+        "category": "Electronics",
+        "imageUrl": "https://images7.memedroid.com/images/UPLOADED923/66a850ff94217.jpeg?w=500",
+        "stock": 50,
     }
 ]
 
