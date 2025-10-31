@@ -36,6 +36,7 @@ variable "tags" {
   default     = {}
 }
 
+# This is the sample seed product, can change if you want
 variable "seed_products" {
   description = "List of seed products to insert into the Products table."
   type = list(object({

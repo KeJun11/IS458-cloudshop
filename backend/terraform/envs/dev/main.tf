@@ -124,6 +124,7 @@ module "dynamodb" {
   project      = local.project
   environment  = local.environment
   billing_mode = "PAY_PER_REQUEST"
+  seed_products = []  # Disable default seed products - use seed script instead
   tags         = var.additional_tags
 }
 
