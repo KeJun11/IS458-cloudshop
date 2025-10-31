@@ -40,7 +40,7 @@ The table name should be something like: `aws-ecommerce-dev-products`
 First, run in dry-run mode to see what would be inserted:
 
 ```bash
-python seed_products.py --table-name aws-ecommerce-dev-products --region us-east-1 --dry-run
+python seed_products.py --table-name test-dev-products --region us-east-1 --dry-run
 ```
 
 ### Actual Seeding
@@ -48,7 +48,7 @@ python seed_products.py --table-name aws-ecommerce-dev-products --region us-east
 Once you're satisfied, run without `--dry-run`:
 
 ```bash
-python seed_products.py --table-name aws-ecommerce-dev-products --region us-east-1
+python seed_products.py --table-name test-dev-products --region us-east-1
 ```
 
 ### Using Default Region
@@ -56,7 +56,7 @@ python seed_products.py --table-name aws-ecommerce-dev-products --region us-east
 If your region is us-east-1, you can omit the `--region` parameter:
 
 ```bash
-python seed_products.py --table-name aws-ecommerce-dev-products
+python seed_products.py --table-name test-dev-products
 ```
 
 ## What Gets Seeded

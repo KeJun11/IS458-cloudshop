@@ -220,8 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           );
           dispatch({ type: "SET_CART", payload: updatedCart });
 
-          // Track the add-to-cart event for recommendations
-          await actions.trackProductView(product);
+          // Don't track add-to-cart for recommendations (keep it simple)
         }
       } catch (error) {
         dispatch({ type: "SET_ERROR", payload: "Failed to add item to cart" });

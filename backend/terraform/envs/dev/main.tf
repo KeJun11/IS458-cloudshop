@@ -290,8 +290,13 @@ module "lambda_process_order" {
     },
     {
       sid       = "SendEmails"
-      actions   = ["ses:SendEmail", "ses:SendRawEmail", "ses:GetIdentityVerificationAttributes"]
-      resources = local.ses_identity_arn != null ? [local.ses_identity_arn] : ["*"]
+      actions   = ["ses:SendEmail", "ses:SendRawEmail"]
+      resources = ["*"]
+    },
+    {
+      sid       = "GetSESVerification"
+      actions   = ["ses:GetIdentityVerificationAttributes"]
+      resources = ["*"]
     }
   ]
 }

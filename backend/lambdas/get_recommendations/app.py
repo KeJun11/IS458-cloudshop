@@ -41,31 +41,41 @@ def lambda_handler(event, context):
         interactions = response['Items']
         
         if not interactions:
-            # No interaction history, return random products
-            return get_random_products(products_table)
+            # No interaction history, return empty array
+            # Frontend will show "Start browsing to get recommendations" message
+            return {
+                "statusCode": 200,
+                "body": json.dumps([])
+            }
         
         # Analyze user preferences based on interactions
-        categories = []
+        # Use MOST RECENT category (simple priority: last viewed category wins)
         viewed_products = set()
         
+        # Sort interactions by timestamp (most recent first)
+        sorted_interactions = sorted(
+            interactions, 
+            key=lambda x: x.get('timestamp', ''), 
+            reverse=True
+        )
+        
+        # Get the most recent category
+        most_recent_category = sorted_interactions[0]['category'] if sorted_interactions else None
+        
+        # Collect all viewed products
         for interaction in interactions:
-            categories.append(interaction['category'])
             viewed_products.add(interaction['productId'])
         
-        # Find most common categories
-        category_counts = Counter(categories)
-        top_categories = [cat for cat, count in category_counts.most_common(3)]
-        
-        # Get products from preferred categories, excluding already viewed
+        # Get products from the most recent category, excluding already viewed
         recommendations = []
         
-        for category in top_categories:
+        if most_recent_category:
             try:
                 response = products_table.query(
                     IndexName=category_index,
                     KeyConditionExpression='category = :category',
-                    ExpressionAttributeValues={':category': category},
-                    Limit=5
+                    ExpressionAttributeValues={':category': most_recent_category},
+                    Limit=10
                 )
                 
                 category_products = response['Items']
@@ -79,18 +89,10 @@ def lambda_handler(event, context):
                         recommendations.append(product)
                         
             except Exception as e:
-                print(f"Error querying category {category}: {str(e)}")
-                continue
+                print(f"Error querying category {most_recent_category}: {str(e)}")
         
-        # If we don't have enough recommendations, fill with random products
-        if len(recommendations) < 5:
-            random_products = get_random_products(products_table, exclude=viewed_products)
-            if random_products['statusCode'] == 200:
-                random_items = json.loads(random_products['body'])
-                for product in random_items:
-                    if len(recommendations) < 10:
-                        recommendations.append(product)
-        
+        # Return recommendations (don't fill with random products if not enough)
+        # This allows frontend to show "start browsing" message when empty
         return {
             "statusCode": 200,
             "body": json.dumps(recommendations)

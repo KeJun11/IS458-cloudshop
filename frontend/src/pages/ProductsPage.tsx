@@ -13,69 +13,87 @@ import {
   Spinner,
   Alert,
   AlertIcon,
-} from '@chakra-ui/react'
-import { FiSearch } from 'react-icons/fi'
-import { useState, useMemo } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ProductCard } from '../components/ProductCard'
-import { useApp } from '../contexts/AppContext'
-import { type Product } from '../services/api'
+} from "@chakra-ui/react";
+import { FiSearch } from "react-icons/fi";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ProductCard } from "../components/ProductCard";
+import { useApp } from "../contexts/AppContext";
+import { type Product } from "../services/api";
 
 export function ProductsPage() {
-  const { state } = useApp()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('name')
-  const [filterCategory, setFilterCategory] = useState(searchParams.get('category') || '')
+  const { state, actions } = useApp();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("name");
+  const [filterCategory, setFilterCategory] = useState(
+    searchParams.get("category") || ""
+  );
+
+  // Reload recommendations when user returns to products page
+  useEffect(() => {
+    // Call loadRecommendations directly, without dependencies
+    // This runs every time the component mounts (when user navigates to this page)
+    const loadRecs = async () => {
+      await actions.loadRecommendations();
+    };
+    loadRecs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleProductClick = (product: Product) => {
-    navigate(`/product/${product.id}`)
-  }
+    navigate(`/product/${product.id}`);
+  };
 
   // Get unique categories
   const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(state.products.map(p => p.category))]
-    return uniqueCategories.sort()
-  }, [state.products])
+    const uniqueCategories = [
+      ...new Set(state.products.map((p) => p.category)),
+    ];
+    return uniqueCategories.sort();
+  }, [state.products]);
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = state.products
+    let filtered = state.products;
 
     // Filter by search term
     if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(term) ||
-        product.description.toLowerCase().includes(term) ||
-        product.category.toLowerCase().includes(term)
-      )
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (product) =>
+          product.name.toLowerCase().includes(term) ||
+          product.description.toLowerCase().includes(term) ||
+          product.category.toLowerCase().includes(term)
+      );
     }
 
     // Filter by category
     if (filterCategory) {
-      filtered = filtered.filter(product => product.category === filterCategory)
+      filtered = filtered.filter(
+        (product) => product.category === filterCategory
+      );
     }
 
     // Sort products
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name)
-        case 'price-low':
-          return a.price - b.price
-        case 'price-high':
-          return b.price - a.price
-        case 'category':
-          return a.category.localeCompare(b.category)
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "price-low":
+          return a.price - b.price;
+        case "price-high":
+          return b.price - a.price;
+        case "category":
+          return a.category.localeCompare(b.category);
         default:
-          return 0
+          return 0;
       }
-    })
+    });
 
-    return sorted
-  }, [state.products, searchTerm, filterCategory, sortBy])
+    return sorted;
+  }, [state.products, searchTerm, filterCategory, sortBy]);
 
   if (state.loading) {
     return (
@@ -85,7 +103,7 @@ export function ProductsPage() {
           <Text>Loading products...</Text>
         </VStack>
       </Container>
-    )
+    );
   }
 
   if (state.error) {
@@ -96,7 +114,7 @@ export function ProductsPage() {
           {state.error}
         </Alert>
       </Container>
-    )
+    );
   }
 
   return (
@@ -138,7 +156,7 @@ export function ProductsPage() {
                   onChange={(e) => setFilterCategory(e.target.value)}
                   placeholder="All Categories"
                 >
-                  {categories.map(category => (
+                  {categories.map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>
@@ -167,7 +185,8 @@ export function ProductsPage() {
         {/* Results Summary */}
         <Box>
           <Text color="gray.600">
-            Showing {filteredAndSortedProducts.length} of {state.products.length} products
+            Showing {filteredAndSortedProducts.length} of{" "}
+            {state.products.length} products
             {filterCategory && ` in "${filterCategory}"`}
             {searchTerm && ` matching "${searchTerm}"`}
           </Text>
@@ -196,5 +215,5 @@ export function ProductsPage() {
         )}
       </VStack>
     </Container>
-  )
+  );
 }

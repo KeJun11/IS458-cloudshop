@@ -134,28 +134,28 @@ def send_confirmation_email(order_id, shipping_info, items, total):
         
         customer_email = shipping_info.get('email')
         if not customer_email:
-            print("No customer email provided")
+            print("ERROR: No customer email provided in shipping info")
             return False
         
-        # Check if the customer email is verified in SES
-        # For demo purposes, we'll check if it's verified, and if not, use the sender email
-        original_customer_email = customer_email
+        # Check if the customer email is verified in SES (required for sandbox mode)
         try:
             # Try to get the verification status of the customer email
             response = ses.get_identity_verification_attributes(Identities=[customer_email])
             verification_status = response.get('VerificationAttributes', {}).get(customer_email, {}).get('VerificationStatus')
             
             if verification_status != 'Success':
-                print(f"Customer email {customer_email} is not verified in SES (status: {verification_status})")
-                customer_email = sender_email
-                print(f"Using verified sender email {sender_email} instead")
+                print(f"ERROR: Customer email '{customer_email}' is not verified in SES")
+                print(f"Verification status: {verification_status if verification_status else 'NOT_FOUND'}")
+                print(f"SES is in sandbox mode - recipient emails must be verified before sending")
+                print(f"To fix: Go to AWS Console -> SES -> Verified identities -> Create identity -> Email address: {customer_email}")
+                return False
             else:
-                print(f"Customer email {customer_email} is verified in SES")
+                print(f"Customer email {customer_email} is verified in SES - proceeding with email")
                 
         except Exception as e:
-            print(f"Could not check verification status for {customer_email}: {str(e)}")
-            print(f"Falling back to verified sender email {sender_email}")
-            customer_email = sender_email
+            print(f"ERROR: Could not check verification status for {customer_email}: {str(e)}")
+            print(f"This may indicate SES permission issues or the email is not verified")
+            return False
         
         customer_name = shipping_info.get('name', 'Valued Customer')
         
@@ -171,10 +171,6 @@ def send_confirmation_email(order_id, shipping_info, items, total):
             items_text += f"- {product_name} (Qty: {quantity}) - ${price:.2f}\n"
         
         # Email body
-        email_note = ""
-        if customer_email != original_customer_email:
-            email_note = f"\n\nNote: This confirmation was sent to {customer_email} because {original_customer_email} is not verified in our email system.\n"
-        
         body_text = f"""
 Dear {customer_name},
 
@@ -196,7 +192,7 @@ Shipping Address:
 
 Your order is now being processed and you'll receive another email when it ships.
 
-Thank you for shopping with us!{email_note}
+Thank you for shopping with us!
 
 Best regards,
 CloudShop Team
@@ -234,8 +230,6 @@ CloudShop Team
     <p>Your order is now being processed and you'll receive another email when it ships.</p>
     
     <p>Thank you for shopping with us!</p>
-    
-    {"<p><em>Note: This confirmation was sent to " + customer_email + " because " + original_customer_email + " is not verified in our email system.</em></p>" if customer_email != original_customer_email else ""}
     
     <p>Best regards,<br>CloudShop Team</p>
 </body>

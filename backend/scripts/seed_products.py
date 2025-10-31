@@ -17,6 +17,7 @@ import json
 
 # Mock product data (matching your frontend mockProducts)
 MOCK_PRODUCTS = [
+    # Existing Electronics
     {
         "productId": "prod-1",
         "name": "Wireless Bluetooth Headphones",
@@ -71,6 +72,122 @@ MOCK_PRODUCTS = [
         "imageUrl": "https://images.unsplash.com/photo-1609592806955-d5b6c3b2e3c5?w=500",
         "stock": 60,
     },
+
+    # 🏠 Home & Kitchen
+    {
+        "productId": "prod-7",
+        "name": "Aromatherapy Diffuser",
+        "description": "Ultrasonic essential oil diffuser with 7-color LED lights",
+        "price": Decimal("45.00"),
+        "category": "Home & Kitchen",
+        "imageUrl": "https://images.unsplash.com/photo-1606813909022-5e3c8f1a2bdf?w=500",
+        "stock": 80,
+    },
+    {
+        "productId": "prod-8",
+        "name": "Non-Stick Frying Pan",
+        "description": "Durable non-stick frying pan with ergonomic handle",
+        "price": Decimal("32.99"),
+        "category": "Home & Kitchen",
+        "imageUrl": "https://images.unsplash.com/photo-1606755962773-0ff9a4c62007?w=500",
+        "stock": 100,
+    },
+    {
+        "productId": "prod-9",
+        "name": "Electric Kettle",
+        "description": "1.7L stainless steel electric kettle with auto shut-off",
+        "price": Decimal("59.99"),
+        "category": "Home & Kitchen",
+        "imageUrl": "https://images.unsplash.com/photo-1586201375754-2637e6a3e89b?w=500",
+        "stock": 50,
+    },
+
+    # 👕 Fashion
+    {
+        "productId": "prod-10",
+        "name": "Classic Denim Jacket",
+        "description": "Timeless unisex denim jacket with a modern cut",
+        "price": Decimal("89.99"),
+        "category": "Fashion",
+        "imageUrl": "https://images.unsplash.com/photo-1514996937319-344454492b37?w=500",
+        "stock": 60,
+    },
+    {
+        "productId": "prod-11",
+        "name": "White Sneakers",
+        "description": "Minimalist white sneakers made from vegan leather",
+        "price": Decimal("109.99"),
+        "category": "Fashion",
+        "imageUrl": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500",
+        "stock": 45,
+    },
+    {
+        "productId": "prod-12",
+        "name": "Cotton Hoodie",
+        "description": "Soft cotton hoodie for casual everyday wear",
+        "price": Decimal("69.99"),
+        "category": "Fashion",
+        "imageUrl": "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500",
+        "stock": 75,
+    },
+
+    # ⚽ Sports & Outdoors
+    {
+        "productId": "prod-13",
+        "name": "Yoga Mat",
+        "description": "Eco-friendly non-slip yoga mat for all levels",
+        "price": Decimal("39.99"),
+        "category": "Sports & Outdoors",
+        "imageUrl": "https://images.unsplash.com/photo-1599058917212-d750089bc07c?w=500",
+        "stock": 120,
+    },
+    {
+        "productId": "prod-14",
+        "name": "Hiking Backpack",
+        "description": "Water-resistant hiking backpack with 40L capacity",
+        "price": Decimal("99.99"),
+        "category": "Sports & Outdoors",
+        "imageUrl": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=500",
+        "stock": 35,
+    },
+    {
+        "productId": "prod-15",
+        "name": "Stainless Steel Water Bottle",
+        "description": "Insulated water bottle that keeps drinks cold for 24h",
+        "price": Decimal("29.99"),
+        "category": "Sports & Outdoors",
+        "imageUrl": "https://images.unsplash.com/photo-1586864387967-d02ef85d93e0?w=500",
+        "stock": 200,
+    },
+
+    # 💄 Beauty & Personal Care
+    {
+        "productId": "prod-16",
+        "name": "Facial Cleanser",
+        "description": "Gentle foaming cleanser for all skin types",
+        "price": Decimal("25.99"),
+        "category": "Beauty & Personal Care",
+        "imageUrl": "https://images.unsplash.com/photo-1583241800054-4e94d3d2d30d?w=500",
+        "stock": 90,
+    },
+    {
+        "productId": "prod-17",
+        "name": "Moisturizing Lotion",
+        "description": "Hydrating lotion with aloe vera and vitamin E",
+        "price": Decimal("19.99"),
+        "category": "Beauty & Personal Care",
+        "imageUrl": "https://images.unsplash.com/photo-1612817159949-195b2c98f84e?w=500",
+        "stock": 110,
+    },
+    {
+        "productId": "prod-18",
+        "name": "Hair Dryer",
+        "description": "Compact ionic hair dryer with 3 heat settings",
+        "price": Decimal("79.99"),
+        "category": "Beauty & Personal Care",
+        "imageUrl": "https://images.unsplash.com/photo-1603297631963-6fc46f4ee5c3?w=500",
+        "stock": 70,
+    }
 ]
 
 
