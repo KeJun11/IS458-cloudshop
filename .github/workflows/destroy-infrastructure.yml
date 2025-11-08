@@ -1,0 +1,84 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:  # Manual trigger only - prevents accidental destruction
+    inputs:
+      confirmation:
+        description: 'Type "DESTROY" to confirm deletion of all infrastructure'
+        required: true
+        default: ''
+
+env:
+  TF_DIR: backend/terraform/envs/dev
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "DESTROY" ]; then
+            echo "❌ Confirmation failed. You must type 'DESTROY' to proceed."
+            exit 1
+          fi
+          echo "✅ Confirmation validated. Proceeding with infrastructure destruction..."
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.4
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform Plan Destroy
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "📋 Planning destruction of infrastructure..."
+          terraform plan -destroy -out=destroy.tfplan
+
+      - name: Terraform Destroy
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "🔥 DESTROYING INFRASTRUCTURE..."
+          terraform apply -input=false -auto-approve destroy.tfplan
+          echo ""
+          echo "=================================================="
+          echo "✅ INFRASTRUCTURE DESTROYED SUCCESSFULLY"
+          echo "=================================================="
+          echo ""
+          echo "⚠️  All resources have been deleted:"
+          echo "  • S3 Buckets (frontend + invoices)"
+          echo "  • CloudFront Distribution"
+          echo "  • API Gateway"
+          echo "  • Lambda Functions (6x)"
+          echo "  • DynamoDB Tables (4x)"
+          echo "  • SQS Queue"
+          echo "  • IAM Roles"
+          echo "  • CloudWatch Logs"
+          echo ""
+          echo "💡 To redeploy, push to main branch or run CD pipeline manually."
+          echo "=================================================="
+
+      - name: Cleanup Notice
+        if: always()
+        run: |
+          echo ""
+          echo "🧹 Cleanup complete. Infrastructure state updated."
+          echo ""
+          echo "Next steps:"
+          echo "1. Verify deletion in AWS Console"
+          echo "2. Check for any orphaned resources"
+          echo "3. To redeploy: push to main or trigger CD pipeline"
