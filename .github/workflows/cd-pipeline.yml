@@ -1,0 +1,157 @@
+name: Continuous Deployment Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  TF_DIR: backend/terraform/envs/dev
+  FRONTEND_DIR: frontend
+  BACKEND_SEED_SCRIPT: backend/scripts/seed_products.py
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # ============================================
+      # STEP 1: Terraform Init, Plan, Apply
+      # ============================================
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -out=tfplan -input=false
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Export Terraform Outputs
+        working-directory: ${{ env.TF_DIR }}
+        id: tf_outputs
+        run: |
+          echo "Extracting Terraform outputs..."
+          S3_BUCKET=$(terraform output -raw static_site_bucket)
+          API_ENDPOINT=$(terraform output -raw api_endpoint)
+          DYNAMODB_TABLES=$(terraform output -json dynamodb_tables)
+          PRODUCTS_TABLE=$(echo $DYNAMODB_TABLES | jq -r '.products')
+          CLOUDFRONT_DOMAIN=$(terraform output -raw cloudfront_domain)
+          
+          echo "s3_bucket=$S3_BUCKET" >> $GITHUB_OUTPUT
+          echo "api_endpoint=$API_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "products_table=$PRODUCTS_TABLE" >> $GITHUB_OUTPUT
+          echo "cloudfront_domain=$CLOUDFRONT_DOMAIN" >> $GITHUB_OUTPUT
+          
+          echo "✅ S3 Bucket: $S3_BUCKET"
+          echo "✅ API Endpoint: $API_ENDPOINT"
+          echo "✅ Products Table: $PRODUCTS_TABLE"
+          echo "✅ CloudFront Domain: $CLOUDFRONT_DOMAIN"
+
+      # ============================================
+      # STEP 2: Build Frontend
+      # ============================================
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm ci
+
+      - name: Update Frontend API Endpoint
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: |
+          API_ENDPOINT="${{ steps.tf_outputs.outputs.api_endpoint }}"
+          echo "Updating frontend to use API endpoint: $API_ENDPOINT"
+          
+          # Create or update .env.production file
+          echo "VITE_API_ENDPOINT=$API_ENDPOINT" > .env.production
+          cat .env.production
+
+      - name: Build Frontend
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run build
+
+      # ============================================
+      # STEP 3: Deploy Frontend to S3
+      # ============================================
+      - name: Sync Frontend to S3
+        run: |
+          S3_BUCKET="${{ steps.tf_outputs.outputs.s3_bucket }}"
+          echo "Deploying frontend to s3://$S3_BUCKET"
+          aws s3 sync ${{ env.FRONTEND_DIR }}/dist s3://$S3_BUCKET --delete --cache-control "public, max-age=31536000"
+          
+          # Update index.html and main files with shorter cache
+          aws s3 cp ${{ env.FRONTEND_DIR }}/dist/index.html s3://$S3_BUCKET/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, '${{ steps.tf_outputs.outputs.s3_bucket }}')].Id" --output text)
+          
+          if [ -n "$DISTRIBUTION_ID" ]; then
+            echo "Invalidating CloudFront distribution: $DISTRIBUTION_ID"
+            aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+          else
+            echo "⚠️  No CloudFront distribution found for this S3 bucket"
+          fi
+
+      # ============================================
+      # STEP 4: Seed Product Data
+      # ============================================
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3
+
+      - name: Seed DynamoDB Products Table
+        run: |
+          PRODUCTS_TABLE="${{ steps.tf_outputs.outputs.products_table }}"
+          echo "Seeding products to table: $PRODUCTS_TABLE"
+          
+          python ${{ env.BACKEND_SEED_SCRIPT }} \
+            --table-name "$PRODUCTS_TABLE" \
+            --region "${{ secrets.AWS_REGION }}"
+
+      # ============================================
+      # STEP 5: Deployment Summary
+      # ============================================
+      - name: Deployment Summary
+        run: |
+          echo "=================================================="
+          echo "✅ DEPLOYMENT COMPLETED SUCCESSFULLY"
+          echo "=================================================="
+          echo ""
+          echo "🌐 Frontend URL: https://${{ steps.tf_outputs.outputs.cloudfront_domain }}"
+          echo "🔗 API Endpoint: ${{ steps.tf_outputs.outputs.api_endpoint }}"
+          echo "📦 S3 Bucket: ${{ steps.tf_outputs.outputs.s3_bucket }}"
+          echo "🗃️  Products Table: ${{ steps.tf_outputs.outputs.products_table }}"
+          echo ""
+          echo "=================================================="
