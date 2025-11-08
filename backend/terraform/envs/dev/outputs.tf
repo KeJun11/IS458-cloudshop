@@ -33,3 +33,13 @@ output "ses_identity" {
   value       = local.ses_identity_arn
   sensitive   = false
 }
+
+output "cloudwatch_dashboard_name" {
+  description = "Name of the CloudWatch monitoring dashboard."
+  value       = module.cloudwatch_monitoring.dashboard_name
+}
+
+output "cloudwatch_alarms" {
+  description = "CloudWatch alarm ARNs for monitoring."
+  value       = module.cloudwatch_monitoring.alarm_arns
+}

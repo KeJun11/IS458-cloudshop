@@ -421,3 +421,16 @@ resource "aws_lambda_event_source_mapping" "process_order_queue" {
   enabled          = true
   batch_size       = 1
 }
+
+module "cloudwatch_monitoring" {
+  source = "../../modules/cloudwatch_monitoring"
+
+  project         = local.project
+  environment     = local.environment
+  aws_region      = data.aws_region.current.name
+  api_gateway_id  = module.http_api.api_id
+  sqs_queue_name  = module.order_queue.queue_name
+  sqs_dlq_name    = module.order_queue.dlq_name
+}
+
+data "aws_region" "current" {}
