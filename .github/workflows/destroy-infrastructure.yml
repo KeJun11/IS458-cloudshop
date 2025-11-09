@@ -1,12 +1,12 @@
 name: Destroy Infrastructure
 
 on:
-  workflow_dispatch:  # Manual trigger only - prevents accidental destruction
+  workflow_dispatch: # Manual trigger only - prevents accidental destruction
     inputs:
       confirmation:
         description: 'Type "DESTROY" to confirm deletion of all infrastructure'
         required: true
-        default: ''
+        default: ""
 
 env:
   TF_DIR: backend/terraform/envs/dev
@@ -39,18 +39,74 @@ jobs:
           terraform_version: 1.13.4
           terraform_wrapper: false
 
+      # Build Lambda packages (required even for destroy due to Terraform's archive_file data source)
+      - name: Build Lambda Packages
+        run: |
+          echo "Building Lambda packages (required for Terraform plan)..."
+
+          # Create build directory
+          mkdir -p backend/build
+
+          # Build create_order Lambda
+          if [ -f "backend/lambdas/create_order/requirements.txt" ]; then
+            echo "📦 Building create_order Lambda..."
+            mkdir -p backend/build/create_order
+            cp backend/lambdas/create_order/*.py backend/build/create_order/
+            pip install -r backend/lambdas/create_order/requirements.txt -t backend/build/create_order/ --upgrade --quiet
+            echo "✅ create_order built"
+          fi
+
+          # Build process_order Lambda
+          if [ -f "backend/lambdas/process_order/requirements.txt" ]; then
+            echo "📦 Building process_order Lambda..."
+            mkdir -p backend/build/process_order
+            cp backend/lambdas/process_order/*.py backend/build/process_order/
+            pip install -r backend/lambdas/process_order/requirements.txt -t backend/build/process_order/ --upgrade --quiet
+            echo "✅ process_order built"
+          fi
+
+          # Build stripe_webhook Lambda
+          if [ -f "backend/lambdas/stripe_webhook/requirements.txt" ]; then
+            echo "📦 Building stripe_webhook Lambda..."
+            mkdir -p backend/build/stripe_webhook
+            cp backend/lambdas/stripe_webhook/*.py backend/build/stripe_webhook/
+            pip install -r backend/lambdas/stripe_webhook/requirements.txt -t backend/build/stripe_webhook/ --upgrade --quiet
+            echo "✅ stripe_webhook built"
+          fi
+
+          # Build other Lambdas without special dependencies
+          for lambda_dir in backend/lambdas/*/; do
+            lambda_name=$(basename "$lambda_dir")
+            if [[ "$lambda_name" != "create_order" && "$lambda_name" != "process_order" && "$lambda_name" != "stripe_webhook" ]]; then
+              echo "📦 Building $lambda_name Lambda..."
+              mkdir -p "backend/build/$lambda_name"
+              cp "$lambda_dir"*.py "backend/build/$lambda_name/" 2>/dev/null || true
+              if [ -f "$lambda_dir/requirements.txt" ]; then
+                pip install -r "$lambda_dir/requirements.txt" -t "backend/build/$lambda_name/" --upgrade --quiet
+              fi
+            fi
+          done
+
+          echo "✅ All Lambda packages built (for Terraform compatibility)"
+
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
         run: terraform init -input=false
 
       - name: Terraform Plan Destroy
         working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: |
           echo "📋 Planning destruction of infrastructure..."
           terraform plan -destroy -out=destroy.tfplan
 
       - name: Terraform Destroy
         working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: |
           echo "🔥 DESTROYING INFRASTRUCTURE..."
           terraform apply -input=false -auto-approve destroy.tfplan
