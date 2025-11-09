@@ -223,7 +223,7 @@ module "lambda_create_order" {
     INVOICE_BUCKET    = aws_s3_bucket.invoice.bucket
     SES_SENDER_EMAIL  = local.ses_sender_email
     STRIPE_SECRET_KEY = var.stripe_secret_key
-    FRONTEND_URL      = "https://${module.cloudfront.domain_name}"
+    FRONTEND_URL      = "https://${module.cloudfront.distribution_domain_name}"
   }
 
   policy_statements = [
