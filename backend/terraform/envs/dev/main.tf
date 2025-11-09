@@ -7,6 +7,7 @@ locals {
   environment          = var.env
   common_tags          = merge({ Project = var.project_name, Environment = var.env, ManagedBy = "terraform" }, var.additional_tags)
   lambda_source_root   = abspath("${path.root}/../../../lambdas")
+  lambda_build_root    = abspath("${path.root}/../../../build")
   static_bucket_name   = "${var.project_name}-${var.env}-frontend-is458-2025-${random_id.bucket_suffix.hex}"
   invoice_bucket_name  = "${var.project_name}-${var.env}-invoices-${random_id.bucket_suffix.hex}"
   ses_identity_defined = var.ses_sender_email != ""
@@ -160,7 +161,7 @@ module "lambda_get_products" {
   environment   = local.environment
   function_name = "get-products"
   description   = "Return catalog products for the store frontend."
-  source_dir    = "${local.lambda_source_root}/get_products"
+  source_dir    = "${local.lambda_build_root}/get_products"
 
   environment_variables = {
     PRODUCTS_TABLE = local.dynamodb_names["products"]
@@ -185,7 +186,7 @@ module "lambda_manage_cart" {
   environment   = local.environment
   function_name = "manage-cart"
   description   = "Create or update a user's shopping cart."
-  source_dir    = "${local.lambda_source_root}/manage_cart"
+  source_dir    = "${local.lambda_build_root}/manage_cart"
 
   environment_variables = {
     CARTS_TABLE    = local.dynamodb_names["carts"]
@@ -213,7 +214,7 @@ module "lambda_create_order" {
   environment   = local.environment
   function_name = "create-order"
   description   = "Persist new orders and enqueue them for processing."
-  source_dir    = "${local.lambda_source_root}/create_order"
+  source_dir    = "${local.lambda_build_root}/create_order"
 
   environment_variables = {
     ORDERS_TABLE      = local.dynamodb_names["orders"]
@@ -260,7 +261,7 @@ module "lambda_process_order" {
   environment   = local.environment
   function_name = "process-order"
   description   = "Process queued orders, send confirmation emails, and archive invoices."
-  source_dir    = "${local.lambda_source_root}/process_order"
+  source_dir    = "${local.lambda_build_root}/process_order"
 
   environment_variables = {
     ORDERS_TABLE      = local.dynamodb_names["orders"]
@@ -312,7 +313,7 @@ module "lambda_track_event" {
   environment   = local.environment
   function_name = "track-event"
   description   = "Capture product interaction events."
-  source_dir    = "${local.lambda_source_root}/track_event"
+  source_dir    = "${local.lambda_build_root}/track_event"
 
   environment_variables = {
     INTERACTIONS_TABLE = local.dynamodb_names["interactions"]
@@ -334,7 +335,7 @@ module "lambda_get_recommendations" {
   environment   = local.environment
   function_name = "get-recommendations"
   description   = "Return product recommendations based on user interaction history."
-  source_dir    = "${local.lambda_source_root}/get_recommendations"
+  source_dir    = "${local.lambda_build_root}/get_recommendations"
 
   environment_variables = {
     INTERACTIONS_TABLE = local.dynamodb_names["interactions"]
