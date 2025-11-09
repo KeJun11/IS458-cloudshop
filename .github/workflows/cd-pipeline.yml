@@ -2,7 +2,7 @@ name: Continuous Deployment Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 env:
@@ -34,16 +34,47 @@ jobs:
           terraform_version: 1.13.4
           terraform_wrapper: false
 
+      # Install Lambda dependencies before Terraform packages them
+      - name: Install Lambda Dependencies
+        run: |
+          echo "Installing Python dependencies for Lambdas..."
+
+          # Install dependencies for create_order Lambda (includes Stripe)
+          if [ -f "backend/lambdas/create_order/requirements.txt" ]; then
+            echo "📦 Installing create_order dependencies..."
+            pip install -r backend/lambdas/create_order/requirements.txt -t backend/lambdas/create_order/
+          fi
+
+          # Install dependencies for process_order Lambda (includes Stripe)
+          if [ -f "backend/lambdas/process_order/requirements.txt" ]; then
+            echo "📦 Installing process_order dependencies..."
+            pip install -r backend/lambdas/process_order/requirements.txt -t backend/lambdas/process_order/
+          fi
+
+          # Install dependencies for stripe_webhook Lambda
+          if [ -f "backend/lambdas/stripe_webhook/requirements.txt" ]; then
+            echo "📦 Installing stripe_webhook dependencies..."
+            pip install -r backend/lambdas/stripe_webhook/requirements.txt -t backend/lambdas/stripe_webhook/
+          fi
+
+          echo "✅ Lambda dependencies installed"
+
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
         run: terraform init -input=false
 
       - name: Terraform Plan
         working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: terraform plan -out=tfplan -input=false
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: terraform apply -input=false -auto-approve tfplan
 
       - name: Export Terraform Outputs
@@ -56,12 +87,12 @@ jobs:
           DYNAMODB_TABLES=$(terraform output -json dynamodb_tables)
           PRODUCTS_TABLE=$(echo $DYNAMODB_TABLES | jq -r '.products')
           CLOUDFRONT_DOMAIN=$(terraform output -raw cloudfront_domain)
-          
+
           echo "s3_bucket=$S3_BUCKET" >> $GITHUB_OUTPUT
           echo "api_endpoint=$API_ENDPOINT" >> $GITHUB_OUTPUT
           echo "products_table=$PRODUCTS_TABLE" >> $GITHUB_OUTPUT
           echo "cloudfront_domain=$CLOUDFRONT_DOMAIN" >> $GITHUB_OUTPUT
-          
+
           echo "✅ S3 Bucket: $S3_BUCKET"
           echo "✅ API Endpoint: $API_ENDPOINT"
           echo "✅ Products Table: $PRODUCTS_TABLE"
@@ -73,8 +104,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
           cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
 
       - name: Install Frontend Dependencies
@@ -86,7 +117,7 @@ jobs:
         run: |
           API_ENDPOINT="${{ steps.tf_outputs.outputs.api_endpoint }}"
           echo "Updating frontend to use API endpoint: $API_ENDPOINT"
-          
+
           # Create or update .env.production file
           echo "VITE_API_ENDPOINT=$API_ENDPOINT" > .env.production
           cat .env.production
@@ -103,14 +134,14 @@ jobs:
           S3_BUCKET="${{ steps.tf_outputs.outputs.s3_bucket }}"
           echo "Deploying frontend to s3://$S3_BUCKET"
           aws s3 sync ${{ env.FRONTEND_DIR }}/dist s3://$S3_BUCKET --delete --cache-control "public, max-age=31536000"
-          
+
           # Update index.html and main files with shorter cache
           aws s3 cp ${{ env.FRONTEND_DIR }}/dist/index.html s3://$S3_BUCKET/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
 
       - name: Invalidate CloudFront Cache
         run: |
           DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, '${{ steps.tf_outputs.outputs.s3_bucket }}')].Id" --output text)
-          
+
           if [ -n "$DISTRIBUTION_ID" ]; then
             echo "Invalidating CloudFront distribution: $DISTRIBUTION_ID"
             aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
@@ -124,7 +155,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install Python Dependencies
         run: |
@@ -135,7 +166,7 @@ jobs:
         run: |
           PRODUCTS_TABLE="${{ steps.tf_outputs.outputs.products_table }}"
           echo "Seeding products to table: $PRODUCTS_TABLE"
-          
+
           python ${{ env.BACKEND_SEED_SCRIPT }} \
             --table-name "$PRODUCTS_TABLE" \
             --region "${{ secrets.AWS_REGION }}"

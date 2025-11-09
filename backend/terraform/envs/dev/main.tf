@@ -216,12 +216,14 @@ module "lambda_create_order" {
   source_dir    = "${local.lambda_source_root}/create_order"
 
   environment_variables = {
-    ORDERS_TABLE     = local.dynamodb_names["orders"]
-    CARTS_TABLE      = local.dynamodb_names["carts"]
-    ORDER_QUEUE_URL  = module.order_queue.queue_url
-    ORDER_QUEUE_ARN  = module.order_queue.queue_arn
-    INVOICE_BUCKET   = aws_s3_bucket.invoice.bucket
-    SES_SENDER_EMAIL = local.ses_sender_email
+    ORDERS_TABLE      = local.dynamodb_names["orders"]
+    CARTS_TABLE       = local.dynamodb_names["carts"]
+    ORDER_QUEUE_URL   = module.order_queue.queue_url
+    ORDER_QUEUE_ARN   = module.order_queue.queue_arn
+    INVOICE_BUCKET    = aws_s3_bucket.invoice.bucket
+    SES_SENDER_EMAIL  = local.ses_sender_email
+    STRIPE_SECRET_KEY = var.stripe_secret_key
+    FRONTEND_URL      = "https://${module.cloudfront.domain_name}"
   }
 
   policy_statements = [
@@ -261,11 +263,12 @@ module "lambda_process_order" {
   source_dir    = "${local.lambda_source_root}/process_order"
 
   environment_variables = {
-    ORDERS_TABLE     = local.dynamodb_names["orders"]
-    CARTS_TABLE      = local.dynamodb_names["carts"]
-    ORDER_QUEUE_ARN  = module.order_queue.queue_arn
-    INVOICE_BUCKET   = aws_s3_bucket.invoice.bucket
-    SES_SENDER_EMAIL = local.ses_sender_email
+    ORDERS_TABLE      = local.dynamodb_names["orders"]
+    CARTS_TABLE       = local.dynamodb_names["carts"]
+    ORDER_QUEUE_ARN   = module.order_queue.queue_arn
+    INVOICE_BUCKET    = aws_s3_bucket.invoice.bucket
+    SES_SENDER_EMAIL  = local.ses_sender_email
+    STRIPE_SECRET_KEY = var.stripe_secret_key
   }
 
   policy_statements = [

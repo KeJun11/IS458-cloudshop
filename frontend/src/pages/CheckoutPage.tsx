@@ -115,6 +115,22 @@ export function CheckoutPage() {
       const result = await apiService.createOrder(orderData);
       console.log("Order created:", result);
 
+      // Check if we have a Stripe checkout URL
+      if (result.checkoutUrl) {
+        toast({
+          title: "Order Created!",
+          description: "Redirecting to payment...",
+          status: "info",
+          duration: 2000,
+          isClosable: true,
+        });
+
+        // Redirect to Stripe Checkout
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+
+      // If no Stripe URL (fallback), proceed with normal flow
       // Clear cart after successful order
       actions.clearCart();
 
@@ -335,11 +351,11 @@ export function CheckoutPage() {
                 <AlertIcon />
                 <VStack align="start" spacing={1}>
                   <Text fontWeight="medium" fontSize="sm">
-                    Secure Checkout
+                    Secure Stripe Checkout
                   </Text>
                   <Text fontSize="xs">
-                    Your order will be processed through our secure cloud
-                    infrastructure.
+                    After placing your order, you'll be redirected to Stripe's
+                    secure payment page.
                   </Text>
                 </VStack>
               </Alert>

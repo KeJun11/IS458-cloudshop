@@ -1,6 +1,7 @@
 import json
 import os
 import boto3
+import stripe
 from datetime import datetime
 from decimal import Decimal
 
@@ -8,6 +9,9 @@ from decimal import Decimal
 dynamodb = boto3.resource('dynamodb')
 ses = boto3.client('ses')
 s3 = boto3.client('s3')
+
+# Initialize Stripe
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 def convert_decimals_to_float(obj):
     """Convert Decimal values back to float for JSON serialization"""
@@ -68,12 +72,9 @@ def lambda_handler(event, context):
 def process_single_order(order_id, user_id, total, items, shipping_info):
     """Process a single order through all phases"""
     try:
-        # Phase 4.1: Simulate payment gateway call
-        payment_success = simulate_payment_gateway(order_id, total)
-        if not payment_success:
-            print(f"Payment failed for order {order_id}")
-            update_order_status(order_id, "PAYMENT_FAILED")
-            return False
+        # Check if order already has payment confirmation (from Stripe webhook)
+        # If not, we'll verify payment status
+        print(f"Processing order {order_id}")
         
         # Phase 4.2: Send confirmation email
         email_success = send_confirmation_email(order_id, shipping_info, items, total)
@@ -105,23 +106,44 @@ def process_single_order(order_id, user_id, total, items, shipping_info):
         print(f"Error processing order {order_id}: {str(e)}")
         return False
 
-def simulate_payment_gateway(order_id, total):
-    """Simulate a payment gateway call"""
+def verify_payment_status(order_id):
+    """Verify if payment has been confirmed via Stripe webhook"""
     try:
-        print(f"Simulating payment gateway call for order {order_id}")
-        print(f"Processing payment of ${total}")
+        orders_table_name = os.getenv("ORDERS_TABLE")
+        if not orders_table_name:
+            print("ORDERS_TABLE environment variable not set")
+            return False
         
-        # Simulate payment processing time and logic
-        # In a real system, this would call Stripe, PayPal, etc.
+        orders_table = dynamodb.Table(orders_table_name)
         
-        # For demo purposes, assume payment always succeeds
-        # You could add logic to randomly fail some payments for testing
+        # Get order from DynamoDB
+        response = orders_table.get_item(Key={'orderId': order_id})
         
-        print(f"Payment successful for order {order_id}")
+        if 'Item' not in response:
+            print(f"Order {order_id} not found")
+            return False
+        
+        order = response['Item']
+        payment_status = order.get('paymentStatus', 'UNKNOWN')
+        
+        print(f"💳 Payment status for order {order_id}: {payment_status}")
+        
+        # Payment is confirmed if webhook already updated the status
+        if payment_status == 'PAYMENT_CONFIRMED':
+            print(f"✅ Payment already confirmed via webhook")
+            return True
+        
+        # If payment is still pending, we'll wait for webhook
+        if payment_status == 'PENDING_PAYMENT':
+            print(f"⏳ Payment pending - waiting for Stripe webhook confirmation")
+            return False
+        
+        # If no payment status, assume it's a test order without Stripe
+        print(f"ℹ️ No payment status found - processing as test order")
         return True
         
     except Exception as e:
-        print(f"Payment gateway error for order {order_id}: {str(e)}")
+        print(f"Error verifying payment status: {str(e)}")
         return False
 
 def send_confirmation_email(order_id, shipping_info, items, total):

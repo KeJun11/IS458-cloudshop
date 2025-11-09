@@ -1,8 +1,17 @@
-project_name = "aws-ecommerce"
+project_name = "test"
 env          = "dev"
 region       = "us-east-1"
+
 # Provide a verified SES sender email before enabling outbound emails. Leave blank to skip SES configuration.
-ses_sender_email = ""
+ses_sender_email = "your-email@example.com"
+
+# Stripe Configuration
+# Get your test keys from: https://dashboard.stripe.com/test/apikeys
+stripe_secret_key = "sk_test_YOUR_STRIPE_SECRET_KEY_HERE"
+
+# Stripe Webhook Secret (optional - get after setting up webhook endpoint)
+# Get from: https://dashboard.stripe.com/test/webhooks
+stripe_webhook_secret = ""  # Leave empty initially, add after webhook is deployed
 
 # Optional overrides
 # frontend_index_key            = "index.html"

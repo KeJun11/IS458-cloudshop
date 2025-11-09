@@ -1,0 +1,5 @@
+# Stripe SDK for webhook signature verification
+stripe>=7.0.0
+
+# AWS SDK
+boto3>=1.26.0

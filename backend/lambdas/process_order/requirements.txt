@@ -1,1 +1,5 @@
-# Placeholder for Lambda-specific dependencies.
+# Stripe SDK for payment processing
+stripe>=7.0.0
+
+# AWS SDK (usually included in Lambda runtime, but good to specify)
+boto3>=1.26.0

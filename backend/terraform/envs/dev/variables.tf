@@ -20,6 +20,20 @@ variable "ses_sender_email" {
   default     = ""
 }
 
+variable "stripe_secret_key" {
+  description = "Stripe secret key for payment processing (get from Stripe Dashboard)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook signing secret for verifying webhook events"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "frontend_index_key" {
   description = "Default root object served by CloudFront."
   type        = string

@@ -111,7 +111,32 @@ foreach ($lambda in $lambdas) {
     if ($?) { Write-Host " Done" -ForegroundColor Green } else { Write-Host " Skipped" -ForegroundColor Gray }
 }
 
-# 7. IAM Roles
+# 7. Lambda Event Source Mappings
+Write-Host ""
+Write-Host "Deleting Lambda Event Source Mappings..." -ForegroundColor Cyan
+$mappings = aws lambda list-event-source-mappings --region $REGION 2>$null | ConvertFrom-Json | Select-Object -ExpandProperty EventSourceMappings | Where-Object { $_.FunctionArn -like "*$PROJECT-$ENV*" }
+foreach ($mapping in $mappings) {
+    Write-Host "  Deleting event source mapping $($mapping.UUID)..." -NoNewline
+    aws lambda delete-event-source-mapping --uuid $mapping.UUID 2>$null
+    if ($?) { Write-Host " Done" -ForegroundColor Green } else { Write-Host " Skipped" -ForegroundColor Gray }
+}
+
+# 8. CloudFront Origin Access Control
+Write-Host ""
+Write-Host "Deleting CloudFront Origin Access Control..." -ForegroundColor Cyan
+$oac = aws cloudfront list-origin-access-controls 2>$null | ConvertFrom-Json | Select-Object -ExpandProperty OriginAccessControlList | Select-Object -ExpandProperty Items | Where-Object { $_.Name -eq "$PROJECT-$ENV-oac" }
+if ($oac) {
+    Write-Host "  Deleting OAC $($oac.Id)..." -NoNewline
+    $etag = aws cloudfront get-origin-access-control --id $oac.Id --query "ETag" --output text 2>$null
+    if ($etag) {
+        aws cloudfront delete-origin-access-control --id $oac.Id --if-match $etag 2>$null
+        if ($?) { Write-Host " Done" -ForegroundColor Green } else { Write-Host " Failed" -ForegroundColor Red }
+    }
+} else {
+    Write-Host "  OAC not found" -ForegroundColor Gray
+}
+
+# 9. IAM Roles
 Write-Host ""
 Write-Host "Deleting IAM Roles..." -ForegroundColor Cyan
 foreach ($lambda in $lambdas) {
@@ -129,7 +154,7 @@ foreach ($lambda in $lambdas) {
     if ($?) { Write-Host " Done" -ForegroundColor Green } else { Write-Host " Skipped" -ForegroundColor Gray }
 }
 
-# 8. CloudFront (manual)
+# 10. CloudFront (manual)
 Write-Host ""
 Write-Host "CloudFront Distribution..." -ForegroundColor Cyan
 Write-Host "  CloudFront must be disabled first, then deleted manually" -ForegroundColor Yellow

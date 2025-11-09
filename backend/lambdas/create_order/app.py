@@ -1,12 +1,16 @@
 import json
 import os
 import boto3
+import stripe
 import uuid
 from datetime import datetime
 from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
 sqs = boto3.client('sqs')
+
+# Initialize Stripe
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 def convert_floats_to_decimal(obj):
     """Convert float values to Decimal for DynamoDB compatibility"""
@@ -140,6 +144,67 @@ def create_order(orders_table, order_data, queue_url):
         # Save order to DynamoDB
         orders_table.put_item(Item=order_for_db)
         
+        # Create Stripe Checkout Session
+        stripe_session_url = None
+        stripe_session_id = None
+        
+        try:
+            # Get frontend URL from environment or use default
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+            
+            # Create line items from cart
+            line_items = []
+            for item in order_data['items']:
+                product = item.get('product', {})
+                line_items.append({
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': product.get('name', 'Product'),
+                            'description': product.get('description', '')[:500],  # Stripe limit
+                        },
+                        'unit_amount': int(product.get('price', 0) * 100),  # Convert to cents
+                    },
+                    'quantity': item.get('quantity', 1),
+                })
+            
+            # Create Stripe Checkout Session
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=line_items,
+                mode='payment',
+                success_url=f"{frontend_url}/order-success?session_id={{CHECKOUT_SESSION_ID}}&order_id={order_id}",
+                cancel_url=f"{frontend_url}/checkout?canceled=true",
+                metadata={
+                    'order_id': order_id,
+                    'user_id': order_data['userId']
+                },
+                customer_email=shipping_info.get('email'),
+            )
+            
+            stripe_session_url = checkout_session.url
+            stripe_session_id = checkout_session.id
+            
+            print(f"✅ Stripe checkout session created: {stripe_session_id}")
+            print(f"🎯 Payment URL: {stripe_session_url}")
+            
+            # Update order with Stripe session info
+            orders_table.update_item(
+                Key={'orderId': order_id},
+                UpdateExpression='SET stripeSessionId = :sessionId, paymentStatus = :status',
+                ExpressionAttributeValues={
+                    ':sessionId': stripe_session_id,
+                    ':status': 'PENDING_PAYMENT'
+                }
+            )
+            
+        except stripe.error.StripeError as e:
+            print(f"❌ Stripe error: {str(e)}")
+            # Continue without Stripe - order is still created
+        except Exception as e:
+            print(f"⚠️ Failed to create Stripe session: {str(e)}")
+            # Continue without Stripe - order is still created
+        
         # Send order to processing queue if queue URL is provided
         if queue_url:
             try:
@@ -157,12 +222,20 @@ def create_order(orders_table, order_data, queue_url):
                 print(f"Failed to send message to queue: {str(e)}")
                 # Continue without failing the order creation
         
+        # Return order info with Stripe checkout URL
+        response_body = {
+            "orderId": order_id,
+            "status": "PENDING"
+        }
+        
+        # Add Stripe checkout URL if available
+        if stripe_session_url:
+            response_body["checkoutUrl"] = stripe_session_url
+            response_body["sessionId"] = stripe_session_id
+        
         return {
             "statusCode": 200,
-            "body": json.dumps({
-                "orderId": order_id,
-                "status": "PENDING"
-            })
+            "body": json.dumps(response_body)
         }
         
     except Exception as e:
