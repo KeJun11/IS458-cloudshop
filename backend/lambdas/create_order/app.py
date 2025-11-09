@@ -3,6 +3,7 @@ import os
 import boto3
 import stripe
 import uuid
+import traceback
 from datetime import datetime
 from decimal import Decimal
 
@@ -198,11 +199,13 @@ def create_order(orders_table, order_data, queue_url):
                 }
             )
             
-        except stripe.error.StripeError as e:
-            print(f"❌ Stripe error: {str(e)}")
-            # Continue without Stripe - order is still created
         except Exception as e:
-            print(f"⚠️ Failed to create Stripe session: {str(e)}")
+            # Handle Stripe errors (newer Stripe SDK uses stripe._error)
+            error_message = str(e)
+            if 'stripe' in str(type(e)).lower() or 'authentication' in error_message.lower():
+                print(f"❌ Stripe error: {error_message}")
+            else:
+                print(f"⚠️ Failed to create Stripe session: {error_message}")
             # Continue without Stripe - order is still created
         
         # Send order to processing queue if queue URL is provided
@@ -240,6 +243,9 @@ def create_order(orders_table, order_data, queue_url):
         
     except Exception as e:
         print(f"Error creating order: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Full traceback:")
+        traceback.print_exc()
         raise
 
 def get_order(orders_table, order_id):
